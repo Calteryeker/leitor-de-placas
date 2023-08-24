@@ -9,3 +9,5 @@ Outras dependências:
   Ultralytics
 
 Dataset original: https://www.kaggle.com/datasets/andrewmvd/car-plate-detection
+
+Alunos: Cláudio Araújo, Daniel Rosa e Diego Pires
