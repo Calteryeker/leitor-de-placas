@@ -1,7 +1,11 @@
 import os
 import cv2
 from ultralytics import YOLO
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
 import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 
 def get_bounding_boxes_yolov8(img_path, model):
@@ -47,19 +51,31 @@ for name in os.listdir("./images"):
     resized_img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
     """
     #Binarização
-    binary_img = resized_img
-
+    binary_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
+    binary_img = cv2.medianBlur(binary_img,5)
+    binary_normal = cv2.adaptiveThreshold(binary_img,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
+    binary_otsu = cv2.threshold(binary_img,125,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     #OCR
     config = r"--oem 3 --psm 6"
-    text_on_img = pytesseract.image_to_string(binary_img, config=config)
+    text_on_original = pytesseract.image_to_string(resized_img, config=config)
+    text_on_binary = pytesseract.image_to_string(binary_normal, config=config)
+    text_on_otsu = pytesseract.image_to_string(binary_otsu[1], config=config)
 
     #mostrando resultado
-    if text_on_img == "":
-        text_on_img = "nao foi possivel ler a placa"
+    if text_on_original == "":
+        text_on_original = "nao foi possivel ler a placa"
+    if text_on_binary == "":
+        text_on_binary = "nao foi possivel ler a placa"
+    if text_on_otsu == "":
+        text_on_otsu = "nao foi possivel ler a placa"
     
-    cv2.namedWindow(text_on_img, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(text_on_img, 200,150)
-    cv2.imshow(text_on_img, img)
-    
-    if cv2.waitKey() == 27:
-        break
+    # cv2.namedWindow(text_on_original, cv2.WINDOW_NORMAL)
+    # cv2.resizeWindow(text_on_original, 200,150)
+    cv2.imshow('text_on_original', binary_img)
+    cv2.imshow('text_on_binary', binary_normal)
+    cv2.imshow('text_on_otsu', binary_otsu[1])
+    print('ESPERADO', name)
+    print('ORIGINAL', text_on_original)
+    print('BINARY', text_on_binary)
+    print('OTSU', text_on_otsu)
+    cv2.waitKey()
