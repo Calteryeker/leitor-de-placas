@@ -34,13 +34,19 @@ def get_acuracy(a, b):
     acuracy=seq.ratio()*100
     return acuracy
 
-
 model = YOLO("./best.pt")
 
-for name in os.listdir("./images"):
-    
-    img = cv2.imread("./images/"+name)
-    bbs = get_bounding_boxes_yolov8("./images/"+name, model)
+pts_original_total = 0
+pts_binary_total = 0
+pts_otsu_total = 0
+
+nao_lidas_original = 0
+nao_lidas_binary = 0
+nao_lidas_otsu = 0
+
+for name in os.listdir("./images_test"):
+    img = cv2.imread("./images_test/"+name)
+    bbs = get_bounding_boxes_yolov8("./images_test/"+name, model)
 
     if len(bbs) == 0:
         continue
@@ -71,7 +77,7 @@ for name in os.listdir("./images"):
     binary_otsu_blur = cv2.threshold(blur_img,125,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     
     #OCR
-    config = r"--oem 3 --psm 6"
+    config = r"--oem 3 --psm 1"
     text_on_original = pytesseract.image_to_string(resized_img, config=config)
     text_on_otsu_blur = pytesseract.image_to_string(binary_otsu_blur[1], config=config)
     text_on_otsu_brightness = pytesseract.image_to_string(binary_otsu_brightness[1], config=config)
@@ -96,3 +102,4 @@ for name in os.listdir("./images"):
     ' || Acuracy: ', get_acuracy(name, text_on_binary_blur), '%')
 
     cv2.waitKey()
+
