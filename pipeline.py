@@ -5,7 +5,8 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 import pytesseract
-#pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+import difflib
 
 
 def get_bounding_boxes_yolov8(img_path, model):
@@ -27,23 +28,11 @@ def get_bounding_boxes_yolov8(img_path, model):
             bounding_boxes.append(([top_left, bottom_right], label, conf))
     return bounding_boxes
 
-def compare_plates(real, read):
-    real = real[:-4]
-    total_points = 0
-    if len(real) == len(read):
-        total_points+=1
-    if real in read.upper():
-        total_points+=1
-        return total_points
-    else:
-        char_count = 0
-        for c in real:
-            if c in read: 
-                char_count+=1
-        
-        total_points += char_count/len(real)
-
-    return total_points
+def get_acuracy(a, b):
+    bclean = ''.join(c for c in b if c.isalnum())
+    seq=difflib.SequenceMatcher(None, a[:-4], bclean)
+    acuracy=seq.ratio()*100
+    return acuracy
 
 model = YOLO("./best.pt")
 
@@ -75,66 +64,42 @@ for name in os.listdir("./images_test"):
     resized_img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
     """
     #Binarização
-    binary_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
-    binary_img = cv2.medianBlur(binary_img,5)
-    binary_normal = cv2.adaptiveThreshold(binary_img,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
-    binary_otsu = cv2.threshold(binary_img,125,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    gray_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
+    adjusted_brightness_img = cv2.convertScaleAbs(gray_img, alpha=0.03, beta=0)
+    blur_img = cv2.medianBlur(gray_img,5)
+    
+    #Brightness
+    binary_otsu_brightness = cv2.threshold(adjusted_brightness_img,1,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    binary_brightness = cv2.adaptiveThreshold(adjusted_brightness_img,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
+
+    #Blur
+    binary_blur = cv2.adaptiveThreshold(blur_img,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
+    binary_otsu_blur = cv2.threshold(blur_img,125,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    
     #OCR
     config = r"--oem 3 --psm 1"
     text_on_original = pytesseract.image_to_string(resized_img, config=config)
-    text_on_binary = pytesseract.image_to_string(binary_normal, config=config)
-    text_on_otsu = pytesseract.image_to_string(binary_otsu[1], config=config)
-
-    #Avaliando resultados
-    #Pontuação para imagem original
-    if text_on_original == "":
-        text_on_original = "nao foi possivel ler a placa"
-        nao_lidas_original += 1
-        pts_original = 0
-    else:
-        pts_original = compare_plates(name, text_on_original)
-
-    pts_original_total += pts_original
-
-    #Potuação para imagem binarizada com limiar adaptativo
-    if text_on_binary == "":
-        text_on_binary = "nao foi possivel ler a placa"
-        nao_lidas_binary += 1
-        pts_binary = 0
-    else:
-        pts_binary = compare_plates(name, text_on_binary)
-
-    pts_binary_total += pts_binary
-
-    #Pontuação para imagem binarizada com OTSU
-    if text_on_otsu == "":
-        text_on_otsu = "nao foi possivel ler a placa"
-        nao_lidas_otsu +=1
-        pts_otsu = 0
-    else:
-        pts_otsu = compare_plates(name, text_on_otsu)
+    text_on_otsu_blur = pytesseract.image_to_string(binary_otsu_blur[1], config=config)
+    text_on_otsu_brightness = pytesseract.image_to_string(binary_otsu_brightness[1], config=config)
     
-    pts_otsu_total += pts_otsu
-    
-    # cv2.namedWindow(text_on_original, cv2.WINDOW_NORMAL)
-    # cv2.resizeWindow(text_on_original, 200,150)
-    """ cv2.imshow('text_on_original', binary_img)
-    cv2.imshow('text_on_binary', binary_normal)
-    cv2.imshow('text_on_otsu', binary_otsu[1]) """
-    print('ESPERADO', name[:-4])
-    print('ORIGINAL', text_on_original.upper(), 'Pontuação:', pts_original)
-    print('ADAPTATIVE TRESHOLD', text_on_binary.upper(), 'Pontuação:', pts_binary)
-    print('OTSU', text_on_otsu.upper(), 'Pontuação:', pts_otsu)
+    text_on_binary_blur = pytesseract.image_to_string(binary_blur, config=config)
+    text_on_binary_brightness = pytesseract.image_to_string(binary_brightness, config=config)
 
-    """ if cv2.waitKey() == 27:
-        break """
+    cv2.imshow('text_on_original', adjusted_brightness_img)
+    cv2.imshow('text_on_otsu_brightness', binary_otsu_brightness[1])
+    cv2.imshow('text_on_otsu_blur', binary_otsu_blur[1])
+    cv2.imshow('text_on_binary_brightness', binary_brightness)
+    cv2.imshow('text_on_binary_blur', binary_blur)
 
-print('\n\nPontuação Final:')
-print('ORIGINAL: ', pts_original_total)
-print('ADAPTATIVE TRESHOLD', pts_binary_total)
-print('OTSU', pts_otsu_total)
+    print('ESPERADO = ', name)
+    print('OTSU BRIGHTNESS = ', text_on_otsu_brightness, 
+        ' || Acuracy: ', get_acuracy(name, text_on_otsu_brightness), '%')
+    print('BINARY BRIGHTNESS = ', text_on_binary_brightness, 
+        ' || Acuracy: ', get_acuracy(name, text_on_binary_brightness), '%')
+    print('OTSU BLUR = ', text_on_otsu_blur, 
+    ' || Acuracy: ', get_acuracy(name, text_on_otsu_blur), '%')
+    print('BINARY BLUR = ', text_on_binary_blur, 
+    ' || Acuracy: ', get_acuracy(name, text_on_binary_blur), '%')
 
-print('\n\nQuantidade de Placas não lidas:')
-print('ORIGINAL: ', nao_lidas_original)
-print('ADAPTATIVE TRESHOLD', nao_lidas_binary)
-print('OTSU', nao_lidas_otsu)
+    cv2.waitKey()
+
