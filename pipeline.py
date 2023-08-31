@@ -36,14 +36,6 @@ def get_acuracy(a, b):
 
 model = YOLO("./best.pt")
 
-pts_original_total = 0
-pts_binary_total = 0
-pts_otsu_total = 0
-
-nao_lidas_original = 0
-nao_lidas_binary = 0
-nao_lidas_otsu = 0
-
 for name in os.listdir("./images_test"):
     img = cv2.imread("./images_test/"+name)
     bbs = get_bounding_boxes_yolov8("./images_test/"+name, model)
