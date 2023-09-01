@@ -52,10 +52,10 @@ num_images = 0
 
 model = YOLO("./best.pt")
 
-for name in os.listdir("./images_test"):
+for name in os.listdir("./images"):
     
-    image = cv2.imread("./images_test/"+name)
-    bbs = get_bounding_boxes_yolov8("./images_test/"+name, model)
+    image = cv2.imread("./images/"+name)
+    bbs = get_bounding_boxes_yolov8("./images/"+name, model)
 
     if len(bbs) == 0:
         continue
@@ -89,7 +89,7 @@ for name in os.listdir("./images_test"):
     binary_blur_brightness = cv2.adaptiveThreshold(blur_with_brigh_img,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
     
     #OCR
-    config = r"--oem 3 --psm 1"
+    config = r"--oem 3 --psm 6"
     text_on_original = pytesseract.image_to_string(resized_img, config=config)
 
     text_on_otsu_blur = pytesseract.image_to_string(binary_otsu_blur[1], config=config)
