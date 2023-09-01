@@ -89,7 +89,7 @@ for name in os.listdir("./images"):
     binary_blur_brightness = cv2.adaptiveThreshold(blur_with_brigh_img,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
     
     #OCR
-    config = r"--oem 3 --psm 6"
+    config = r"--oem 3 --psm 1"
     text_on_original = pytesseract.image_to_string(resized_img, config=config)
 
     text_on_otsu_blur = pytesseract.image_to_string(binary_otsu_blur[1], config=config)
@@ -152,7 +152,6 @@ for name in os.listdir("./images"):
     ' || Acuracy: ', get_acuracy(name, text_on_binary_blur_brightness), '%')
 
     cv2.waitKey()
-
 # Acuracy Avarage 
 avg_acuracy_original /= num_images
 avg_acuracy_otsu_brightness /= num_images
@@ -186,3 +185,4 @@ print("Match Total Rate (OTSU Blur):", match_total_otsu_blur_rate, "%")
 print("Match Total Rate (Binary Blur):", match_total_binary_blur_rate, "%")
 print("Match Total Rate (OTSU BlurBrightness):", match_total_otsu_blur_brightness_rate, "%")
 print("Match Total Rate (Binary BlurBrightness):", match_total_binary_blur_brightness_rate, "%")
+
