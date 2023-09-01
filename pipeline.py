@@ -52,10 +52,10 @@ num_images = 0
 
 model = YOLO("./best.pt")
 
-for name in os.listdir("./images"):
+for name in os.listdir("./images_test"):
     
-    image = cv2.imread("./images/"+name)
-    bbs = get_bounding_boxes_yolov8("./images/"+name, model)
+    image = cv2.imread("./images_test/"+name)
+    bbs = get_bounding_boxes_yolov8("./images_test/"+name, model)
 
     if len(bbs) == 0:
         continue
