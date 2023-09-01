@@ -61,10 +61,8 @@ for name in os.listdir("./images"):
         continue
     
     #segmentação
-    img = image[bbs[0][0][0][1]: bbs[0][0][1][1], bbs[0][0][0][0]: bbs[0][0][1][0]]
+    resized_img = image[bbs[0][0][0][1]: bbs[0][0][1][1], bbs[0][0][0][0]: bbs[0][0][1][0]]
 
-    #Resize
-    resized_img = img
     """     
     scale_percent = 150 # percent of original size
     width = int(img.shape[1] * scale_percent / 100)
@@ -83,8 +81,8 @@ for name in os.listdir("./images"):
     binary_brightness = cv2.adaptiveThreshold(adjusted_brightness_img,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
 
     #Blur
-    binary_blur = cv2.adaptiveThreshold(blur_img,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
     binary_otsu_blur = cv2.threshold(blur_img,125,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    binary_blur = cv2.adaptiveThreshold(blur_img,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
 
     #Brightness + blur
     binary_otsu_blur_brightness = cv2.threshold(blur_with_brigh_img,1,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
